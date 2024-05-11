@@ -1,3 +1,9 @@
-Hello, and welcome to my AFM projects within the field of data analytics. 
+Hello, and welcome to my AFM projects related to data. 
 
-Through my specialization in Data Analytics, offered by the School of Accounting & Finance, I have been able to explore different cases to understand how 
+Through my specialization in Data Analytics offered by the School of Accounting & Finance, I have been able to explore different business cases to 
+understand how powerful data is, and how it can help to identify & solve a variety of business problems in our world today. 
+
+AFM 113 was the first class I took that introduced me to R, which is within the same family as other programming languages such as Python. Here, I 
+learned introductory codes, and the importance of different packages such as;
+
+library(tidyverse)
