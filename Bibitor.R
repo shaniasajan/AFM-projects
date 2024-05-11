@@ -1,3 +1,5 @@
+# AFM 244 - week 5
+
 library(tidyverse)
 
 tStores <- read_csv('tStores.csv')
