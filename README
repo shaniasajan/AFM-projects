@@ -2,22 +2,26 @@
 
 Welcome to **my world** of AFM projects related to data. 
 
-Through my specialization in Data Analytics offered by the School of Accounting & Finance, I have been able to explore different business cases to 
-understand how powerful data is, and how it can help to identify & solve a variety of business problems in our world today. It has also helped to understand 
-the accounting & finance world on a deeper level, knowing that there is a world of numbers outside the balance sheet and financial statements that are also used to 
-make key financial decisions. It is crucial for organizations with access to large masses of data leverage this asset in order to meet the needs of different stakeholders, and 
-recognize the potential for growth in the future. 
+Through my specialization in Data Analytics offered by the School of Accounting & Finance, I have been able to explore different business cases to understand how powerful data is, and how it can help identify & solve a variety of business problems in our ever-evolving world today. It has also helped me to understand the accounting & finance world on a deeper level, knowing that there is a world of numbers outside financial statements that are also used to make key financial decisions. It is crucial for organizations with access to large masses of data to leverage this asset in order to meet the needs of different stakeholders, and recognize the potential for growth in the future. 
 
-AFM 112 [Analytic Methods for Business 1] was the first class I took that introduced me to R, which I was happy to find was within the same family as other programming languages 
-such as Python. Here, I learned introductory codes, and the importance of different packages such as:
+AFM 112 [Analytic Methods for Business 1] was the first class I took that introduced me to R, which I was happy to find was within the same family as other programming languages such as Python. Here, I learned introductory codes, and the importance of different packages such as:
 
 library(tidyverse)
 
-I was also intruiged by how much information can be filtered based on what you needed to find, and further learned the value of getting what you need from data
-in 
+I learned how to code data with a statistical approach, understanding the basics about a particular dataset such as the median and finding the outliers that made an impact on the dataset as a whole. I was intruiged by how much information can be filtered based on what you needed to find, and further learned the value of getting what you need from data, using codes such as:
 
+dt1 %>% 
+  select(Store, SalesQuantity, Revenue, productCost, grossProfit) %>% 
+  group_by(Store) %>% 
+  summarize(storeSales =sum(SalesQuantity), 
+            storeRevenue = sum(Revenue), 
+            storeCOGS = sum(productCost), 
+            storeGP = sum(grossProfit), 
+            storeGPM = storeGP/storeRevenue)*100
 
-AFM 244 [Analytic Methods for Business 3], where I first learned about ARIMA models, forecasting and codes such as:
+In my second year, AFM 244 [Analytic Methods for Business 3] was where I first learned about 
+
+ARIMA models, forecasting and codes such as:
 
 evaluated_arima_1 %>% ggplot(aes(x=date, y=qSales)) + 
   geom_line() +
@@ -26,5 +30,4 @@ evaluated_arima_1 %>% ggplot(aes(x=date, y=qSales)) +
   geom_line(aes(y=`Hi 80`), color='red', linetype='dashed')
 evaluated_arima_1
 
-There was so much you could derive with different models, and it was helpful to see visual representations of information through graphs, and tables that summarized information 
-so that it was easily diggestable. It was in AFM 346
+There was so much you could derive with different models, and it was helpful to see visual representations of information through graphs, and tables that summarized information so that it was easily diggestable. It was in AFM 346
