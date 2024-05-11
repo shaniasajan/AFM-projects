@@ -19,9 +19,7 @@ dt1 %>%
             storeGP = sum(grossProfit), 
             storeGPM = storeGP/storeRevenue)*100
 
-In my second year, AFM 244 [Analytic Methods for Business 3] was where I first learned about 
-
-ARIMA models, forecasting and codes such as:
+In my second year, AFM 244 [Analytic Methods for Business 3] was where I first learned about dummy variables, and the use of forecasts to identify how a business could change in the future, given certain facts. This was also the course that introduced ARIMA models, where I would use codes such as:
 
 evaluated_arima_1 %>% ggplot(aes(x=date, y=qSales)) + 
   geom_line() +
@@ -30,4 +28,6 @@ evaluated_arima_1 %>% ggplot(aes(x=date, y=qSales)) +
   geom_line(aes(y=`Hi 80`), color='red', linetype='dashed')
 evaluated_arima_1
 
-There was so much you could derive with different models, and it was helpful to see visual representations of information through graphs, and tables that summarized information so that it was easily diggestable. It was in AFM 346
+There was so much information you could derive with different models, and it was helpful to see visual representations of information through graphs, and tables that summarized information so that it was easily diggestable. 
+
+It was in AFM 346 [Applications of Predictive Analytics in Accounting and Finance] that I was able to see the bigger picture of machine learning, and how many different 
