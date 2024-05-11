@@ -1,3 +1,5 @@
+# AFM 244 - week 2
+
 library(tidyverse)
 options(scipen = 999) # sets penalties for scientific notation - it takes away scientific notation 
 set.seed(123) # to get the same results (for everyone in the class) if we select random samples 
