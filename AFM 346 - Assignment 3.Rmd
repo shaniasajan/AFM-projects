@@ -1,0 +1,330 @@
+---
+title: 'AFM 346: Assignment 3'
+author: "Shania Sajan"
+date: "2023-10-22"
+output: 
+  html_document:
+      toc: yes
+      toc_float: yes
+      theme: sandstone
+---
+# Introduction 
+The purpose of this assignment is to analyze a data set that relates to bank marketing through KNN and logistic regression models. Through EDA and using a final testing data set, a finalized model will be chosen to represent the data. The main goal is to be able to predict whether a customer will sign up for a term deposit (a classification problem).
+
+## **The Data** 
+The data set contains bank data from Portugal, containing information about customers, their job type, education, campaign outcomes, type of communication they have with the bank, etc. It has 4,521 observations with 10 variables.
+
+```{r setup, echo=TRUE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Preparing the Data 
+# Load necessary packages 
+library(tidyverse)
+library(tidymodels)
+library(GGally)
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(glmnet)
+library(yardstick)
+library(rsample)
+
+data <- read_csv("bank_10.csv")
+data %>% is.na() %>% colSums()
+
+data <- data %>% 
+  mutate(y = fct_relevel(y, "yes"))
+
+# Ensuring "yes" comes first 
+data %>% glimpse()
+levels(data$y)
+
+```
+
+Below are 4 different pair plots, split up to view the numerical and categorical variables with more ease. There is also a final chart that is **not** a regular pair plot, and instead, an interactive version of a ggplot2 chart. 
+
+```{r, echo=TRUE, message=FALSE}
+# General Preparation 
+
+# Load the data
+ggpairs(data)
+
+plot1 <- data %>%
+    select(where(is.numeric), y) %>%
+    ggpairs()
+plot1
+
+plot2 <- data %>%
+    select(where(is.character), y) %>%
+    ggpairs()
+plot2 
+
+plot3 <- data %>% 
+  select(contact, poutcome, month, job, y) %>% 
+  ggpairs()
+plot3
+
+plot4 <- data %>% 
+  select(loan, education, marital, y) %>% 
+  ggpairs()
+plot4
+
+# Different chart type
+
+diffchart <- data %>%
+  ggplot( aes(campaign, y, size = duration, color=education)) +
+  geom_point() +
+  theme_bw()
+
+ggplotly(diffchart)
+
+```
+
+I will now be splitting the data into training and testing sets, and creating cross-validation folds. 
+
+```{r, echo=TRUE, message=FALSE}
+# Data Split and CV Folds 
+# Data Split
+library(rsample)
+library(knitr)
+
+set.seed(987)
+data_split <- initial_split(data, prop = 0.70, strata = y)
+train_data <- training(data_split)
+test_data  <- testing(data_split)
+
+train_data
+test_data 
+
+# CV Folds 
+set.seed(654)
+library(modeldata)
+cv_folds <- vfold_cv(train_data, v = 5, repeats = 5, strata = y)
+
+```
+The number of folds indicated above (by "v = ") create random sub- divisions of data for making temporary validation sets, or the number of cross-validation folds. In our case, the data is split into 5 subsets. On the other hand, the number of repetitions indicated (by "repeats = ") is how many times the entire cross-validation process is repeated with random splits. 
+
+# KNN 
+I will now begin the modeling process through the creation of a KNN model.
+```{r, echo=TRUE, message=FALSE}
+# Create a recipe 
+data_recipe <- 
+  recipe(y ~ ., data = train_data) 
+data_recipe
+
+# Create a model 
+knn_model <- nearest_neighbor(neighbors = tune()) %>% 
+    set_engine("kknn") %>%
+    set_mode("classification")
+
+# Create the workflow 
+knn_workflow <- workflow() %>%
+  add_recipe(data_recipe) %>%
+  add_model(knn_model)
+# Verify that this workflow will tune the neighbors hyperparameter
+knn_workflow %>% parameters()
+
+# Tune the Model 
+knn_tuning_range <- expand_grid(neighbors = 2 ^ seq(1, 8, 1))
+perform_metrics <- metric_set(accuracy, roc_auc, precision, recall)
+
+knn_tuned_data <- 
+  knn_workflow %>%
+  tune_grid(cv_folds, 
+            grid = knn_tuning_range, 
+            metrics = perform_metrics, 
+            control = control_resamples(save_pred = TRUE))
+
+# Assess the Performance Metrics
+knn_tuned_data %>% show_best("accuracy")
+knn_tuned_data %>% show_best("precision")
+knn_tuned_data %>% show_best("recall")
+knn_tuned_data %>% show_best("roc_auc")
+
+best_model_accuracy <- knn_tuned_data %>% select_best("accuracy")
+best_model_precision <- knn_tuned_data %>% select_best("precision")
+best_model_recall <- knn_tuned_data %>% select_best("recall")
+best_model_roc_auc <- knn_tuned_data %>% select_best("roc_auc")
+
+print(kable(best_model_accuracy))
+print(kable(best_model_precision))
+print(kable(best_model_recall))
+print(kable(best_model_roc_auc))
+
+# Graph performance metrics 
+library(tune)
+library(ggplot2)
+
+plot_autoplot <- autoplot(knn_tuned_data) +
+  theme_minimal() +  # Adjust the theme as needed
+  labs(title = "Performance Metrics by k",
+       x = "k (Neighbors)",
+       y = "Performance Metric")
+
+plot_autoplot
+
+```
+
+
+## **Results and Interpretation** 
+According to the **ROC AUC** metric, the model that performed the best was model 8, with 256 neighbors and a mean of 0.8735. This model has the highest mean, and highest standard deviation amongst the other models. Thus, model 8 has the best classification accuracy in that it is the best in distinguishing between positive and negative classes. 
+
+Model 8 is not one of the best models for the **recall** metric, as it does not show up under the "show_best" function at all. Thus, we can conclude that model 8 is not representative of one of the best in terms of the recall metric. The models shown gets marginally worse as the number of neighbors in the model increases (ie. the mean decreases). For the **precision** metric, on the other hand, model 8 is included in the top 5 best models, but is at the very bottom of the list. Hence, precision cannot be represented the best with model 8, but is still included and should be recognized of its importance. Precision measures the validity of positive predictions, and thus, it is important when recognizing how many customers actually subscribed to a term deposit, when they had the choice. 
+
+**Accuracy** is used to observe the proportion of observations that were classified correctly in a dataset, with a balanced class distribution. It can be a useful metric in that it interprets the overall performance, however, it is not useful in assessing this model. Model 8 is not one of the top models selected for the accuracy metric, which would have been desired. 
+
+```{r, echo=TRUE, message=FALSE}
+# Confusion Matrix
+best_knn_model <- select_best(knn_tuned_data, metric = 'roc_auc')
+knn_tuned_data %>% 
+    conf_mat_resampled(parameters = best_knn_model)
+
+```
+## **Confusion Matrix**
+A re-sampled confusion matrix, in general, is a table that shows the predicted positive and negative numbers against the actual positive and negatives. In the table above, the following can be summarized from the best model chosen, model 8:
+
+- **True positives**: 5.2
+- **True negatives**: 358.8
+- **False positives**: 3.4
+- **False negatives**: 2796.6
+
+The largest problem with this model is the amount of true negatives. This is how many times it was predicted "no" when the value was actually a positive. The model misclassified this around 359 times. This is a problem in that this makes the model seem less dependable and sensitive in picking up the correct data to be used by analysts. This also increases the false negative rate. 
+
+# Logistic Regression 
+Now that a KNN model was created, let us compare this with a logistic regression model. 
+```{r, echo=TRUE, message=FALSE}
+# Create a recipe 
+reg_data_recipe <- 
+  recipe(y ~ ., data = train_data) %>% 
+  step_normalize(all_numeric()) %>%
+  step_dummy(all_nominal_predictors())
+
+# Create a model 
+library(glmnet)
+reg_model <-
+  logistic_reg(penalty = tune(), mixture = 1) %>%
+  set_engine('glmnet')
+
+# Create a workflow 
+reg_workflow <- workflow() %>% 
+  add_recipe(reg_data_recipe) %>% 
+  add_model(reg_model)
+
+reg_workflow %>% parameters()
+
+# Tune the model 
+reg_tuning <- expand_grid(penalty = seq(0,0.1,0.025)) 
+
+reg_tuned_data <- 
+  reg_workflow %>%
+  tune_grid(cv_folds, 
+            grid = reg_tuning, 
+            metrics = perform_metrics, 
+            control = control_resamples(save_pred = TRUE))
+
+# Assess the Performance Metrics
+reg_tuned_data %>% show_best("accuracy")
+reg_tuned_data %>% show_best("precision")
+reg_tuned_data %>% show_best("recall")
+reg_tuned_data %>% show_best("roc_auc")
+
+best_model_accuracy_reg <- reg_tuned_data %>% select_best("accuracy")
+best_model_precision_reg <- reg_tuned_data %>% select_best("precision")
+best_model_recall_reg <- reg_tuned_data %>% select_best("recall")
+best_model_roc_auc_reg <- reg_tuned_data %>% select_best("roc_auc")
+
+print(kable(best_model_accuracy_reg))
+print(kable(best_model_precision_reg))
+print(kable(best_model_recall_reg))
+print(kable(best_model_roc_auc_reg))
+
+```
+From the results above, we can see that model 1 is consistently the best model for all 4 metrics. 
+
+```{r, echo=TRUE, message=FALSE}
+# Plot Performance of the Models
+reg_graph <- collect_metrics(reg_tuned_data)
+
+ggplot(
+  reg_graph, aes(x = penalty, y = mean)) + 
+  geom_line(aes(color = .metric), linewidth = 1.1) + 
+  facet_wrap(~.metric, scales = "free") + 
+  labs(y = "Performance Metric", x="Penalty Hyperparameter", 
+       title="Performance Metrics by Penalty Hyperparameter")
+```
+From the graph above, it can be seen that a lower penalty results in better predictive ability for all 4 metrics. 
+ 
+## **Results and Interpretation** 
+```{r, echo=TRUE, message=FALSE}
+# Re-sampled confusion matrix for the best logistic regression model
+best_reg_model <- select_best(reg_tuned_data, metric = 'roc_auc')
+reg_tuned_data %>% 
+    conf_mat_resampled(parameters = best_reg_model)
+```
+ The following is the summary for the chosen model, model 1, for the logistic regression:
+
+- **True positives**: 127.2
+- **True negatives**: 236.8
+- **False positives**: 67.0
+- **False negatives**: 2733.0
+
+The model that has overall better performance is the logistic regression because they have more reliant values. For example, the true positive and false negative values are fairly high. In specific, the true positives of 127.2 is much higher than the knn model of 5.2. There are also not as many "true negatives" as the knn model.
+
+# Test the Final Model 
+From the cross-validation estimates and my interpretation of the results, I believe the logistic regression model should have the best performance with the test set. This is mainly due to the fact that the logistic regression model seems to be more reliable and correct in its classifications. 
+```{r, echo=TRUE, message=FALSE}
+# Finalize Workflow
+reg_best <- 
+  reg_workflow %>% 
+  finalize_workflow(best_model_roc_auc_reg) %>% 
+  fit(train_data)
+
+# ROC AUC
+test_data %>% 
+  bind_cols(predict(reg_best, test_data, type = 'prob')) %>%
+  roc_auc(truth = y, .pred_yes)
+
+# Confusion Matrix
+test_data %>% 
+  bind_cols(predict(reg_best, test_data)) %>%
+  conf_mat(truth = y, estimate = .pred_class)
+
+```
+**How do the cross-validation error metrics (with the training set) compare to the final error metrics (with the test set)?**
+
+
+The final metric for **ROC AUC** slightly differ for both training and testing data, in that the testing set has a slightly lower value: 
+
+**Training set** - 0.892
+
+**Testing set** - 0.882
+
+This slight variation indicates that there is not much change between the models and that both the training and testing sets are not over fitted.
+
+In terms of the **confusion matrix**, we can see how they differ from the training and testing data below:
+
+**Training set:**
+
+- **True positives**: 127.2
+- **True negatives**: 236.8
+- **False positives**: 67.0
+- **False negatives**: 2733.0
+
+**Testing set:**
+
+- **True positives**: 48.0
+- **True negatives**: 109.0
+- **False positives**: 32.0
+- **False negatives**: 1168.0
+
+Overall, the testing set seems to have lower amounts in all areas of the confusion matrix. Similar to the training set, it has a large number of true negatives, which should be more accurately identified by the model. Similarly, there are the highest amounts of false negatives in both sets. 
+
+**Considering the business problem of marketing term deposits, which aspects of the final model prediction would you recommend enhancing?**
+
+
+I would recommend enhancing the model in a few ways, namely:
+
+- decreasing the amount of false negatives so that the bank is able to identify which customers actually signed up for a term deposit, and not 
+- using feature engineering, such as using interaction terms, to allow for the analysis of the relationships even further 
+- using a feedback loop to adapt the model to new changes about customer behaviour and preferences in terms of term deposits 
+- using external data & research to support the final model even further 
+
