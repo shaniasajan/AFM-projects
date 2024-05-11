@@ -1,3 +1,5 @@
+# AFM 244 - week 4
+
 library(tidyverse)
 dt0 <- read_csv("CosmoPhone_2022S.csv")
 
