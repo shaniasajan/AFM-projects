@@ -30,6 +30,8 @@ evaluated_arima_1
 
 There was so much information you could derive with different models, and it was helpful to see visual representations of information through graphs, and tables that summarized information so that it was easily diggestable. 
 
+I was also able to learn more about Tableau in my second year, thanks to AFM 207 [Introduction to Performance Analytics], where I learned the importance of data visualization in explaining business concepts to important stakeholders. I learned different types of graphs, such as bubble charts and treemaps, all capable of displaying data in a creative, but organized manner for appropriate audiences. 
+
 It was in AFM 346 [Applications of Predictive Analytics in Accounting and Finance] that I was able to see the bigger picture of machine learning, and the use of Rmd files, convertible to HTML files, so that text, coding, and its outputs were able to be seen effectively on one page. We were encouraged to really understand what each code meant for our analysis, and what problem we were trying to solve by the end of each task. We were introduced to feature engineering, and more advanced models such as KNN & linear regression to match certain problems with datasets. The coding for these projects often came with assessing the final models that were created, and looked like the following: 
 
 final_fit <- 
